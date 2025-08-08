@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Country Typing Game</title>
+    <title>Guess the Country Game</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        /* CSS for the Dark Blue Theme and Poppins Font */
+        /* Base Styling for the Dark Blue Theme and Poppins Font */
         body {
             font-family: 'Poppins', sans-serif;
             background-color: #1a202c; /* Dark blue background */
             color: #e2e8f0; /* Light gray text */
             display: flex;
             justify-content: center;
-            align-items: center; /* Center vertically for a compact widget */
+            align-items: center; /* Center vertically and horizontally */
             min-height: 100vh;
             margin: 0;
             padding: 20px;
@@ -28,7 +28,7 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
             text-align: center;
             width: 100%;
-            max-width: 500px; /* Make it a bit narrower for a widget feel */
+            max-width: 600px; /* Adjusted for better game layout */
         }
 
         h1 {
@@ -37,13 +37,26 @@
             font-weight: 700;
         }
 
-        .timer, .country-count {
+        .info-display {
             font-size: 1.2em;
             margin-bottom: 15px;
             font-weight: 600;
         }
 
-        #country-input {
+        .hint-display {
+            background-color: #4a5568;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            min-height: 60px; /* Ensure space for hints */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-style: italic;
+            color: #cbd5e0;
+        }
+
+        #guess-input {
             width: calc(100% - 20px);
             padding: 12px;
             margin-bottom: 15px;
@@ -54,9 +67,10 @@
             font-size: 1em;
             font-family: 'Poppins', sans-serif;
             box-sizing: border-box;
+            text-align: center; /* Center the typed text */
         }
 
-        #country-input::placeholder {
+        #guess-input::placeholder {
             color: #a0aec0;
         }
 
@@ -86,10 +100,17 @@
             transition: background-color 0.2s ease-in-out;
             margin: 0 5px;
             font-weight: 600;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* Added shadow */
         }
 
         button:hover {
             background-color: #4299e1; /* Darker blue on hover */
+            transform: translateY(-1px); /* Slight lift effect */
+        }
+
+        button:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
         }
 
         button:disabled {
@@ -97,261 +118,254 @@
             cursor: not-allowed;
             opacity: 0.7;
         }
+
+        /* Modal Styling */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+        }
+
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background-color: #2d3748;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            max-width: 400px;
+            transform: scale(0.9);
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .modal-overlay.show .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-content h2 {
+            color: #48bb78; /* Green for success */
+            margin-bottom: 15px;
+            font-weight: 700;
+            font-size: 1.8em;
+        }
+        .modal-content p {
+            font-size: 1.1em;
+            margin-bottom: 25px;
+        }
+        .modal-content .modal-close-button {
+            background-color: #63b3ed;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+            font-family: 'Poppins', sans-serif;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+        }
+        .modal-content .modal-close-button:hover {
+            background-color: #4299e1;
+        }
     </style>
 </head>
 <body>
     <div class="game-container">
-        <h1>Type the Countries Chanel!</h1>
-        <div class="timer">Time: <span id="time-display">00:00</span></div>
-        <div class="country-count">Found: <span id="found-count">0</span> / <span id="total-count"></span></div>
-        <input type="text" id="country-input" placeholder="Start typing country names..." autofocus disabled>
+        <h1>Guess the Country!</h1>
+        <div class="info-display">
+            Tries Left: <span id="tries-left-display">5</span>
+        </div>
+        <div class="hint-display" id="hint-display">
+            Click "Start Game" to begin!
+        </div>
+        <input type="text" id="guess-input" placeholder="Enter your guess..." autofocus disabled>
         <div id="feedback-message" class="feedback"></div>
-        <button id="start-button">Start Game</button>
-        <button id="reset-button" style="display:none;">Reset Game</button>
+        <button id="start-game-button">Start Game</button>
+        <button id="new-game-button" style="display:none;">New Game</button>
+    </div>
+
+    <!-- Custom Modal for Win/Loss -->
+    <div id="game-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2 id="modal-title"></h2>
+            <p id="modal-message"></p>
+            <button id="modal-close-button" class="modal-close-button">Close</button>
+        </div>
     </div>
 
     <script>
-        const countryInput = document.getElementById('country-input');
+        const guessInput = document.getElementById('guess-input');
         const feedbackMessage = document.getElementById('feedback-message');
-        const timeDisplay = document.getElementById('time-display');
-        const foundCountDisplay = document.getElementById('found-count');
-        const totalCountDisplay = document.getElementById('total-count');
-        const startButton = document.getElementById('start-button');
-        const resetButton = document.getElementById('reset-button');
+        const triesLeftDisplay = document.getElementById('tries-left-display');
+        const hintDisplay = document.getElementById('hint-display');
+        const startGameButton = document.getElementById('start-game-button');
+        const newGameButton = document.getElementById('new-game-button');
 
-        let allCountries = []; 
-        let foundCountries = new Set();
-        let startTime;
-        let timerInterval;
-        let gameRunning = false;
+        const gameModal = document.getElementById('game-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalMessage = document.getElementById('modal-message');
+        const modalCloseButton = document.getElementById('modal-close-button');
 
-        // Comprehensive list of countries for the game
-        const countryData = [
-            { name: "Afghanistan", iso: "AF" }, { name: "Albania", iso: "AL" }, { name: "Algeria", iso: "DZ" },
-            { name: "Andorra", iso: "AD" }, { name: "Angola", iso: "AO" }, { name: "Antigua and Barbuda", iso: "AG" },
-            { name: "Argentina", iso: "AR" }, { name: "Armenia", iso: "AM" }, { name: "Australia", iso: "AU" },
-            { name: "Austria", iso: "AT" }, { name: "Azerbaijan", iso: "AZ" }, { name: "Bahamas", iso: "BS" },
-            { name: "Bahrain", iso: "BH" }, { name: "Bangladesh", iso: "BD" }, { name: "Barbados", iso: "BB" },
-            { name: "Belarus", iso: "BY" }, { name: "Belgium", iso: "BE" }, { name: "Belize", iso: "BZ" },
-            { name: "Benin", iso: "BJ" }, { name: "Bhutan", iso: "BT" }, { name: "Bolivia", iso: "BO" },
-            { name: "Bosnia and Herzegovina", iso: "BA" }, { name: "Botswana", iso: "BW" }, { name: "Brazil", iso: "BR" },
-            { name: "Brunei", iso: "BN" }, { name: "Bulgaria", iso: "BG" }, { name: "Burkina Faso", iso: "BF" },
-            { name: "Burundi", iso: "BI" }, { name: "Cabo Verde", iso: "CV" }, { name: "Cambodia", iso: "KH" },
-            { name: "Cameroon", iso: "CM" }, { name: "Canada", iso: "CA" }, { name: "Central African Republic", iso: "CF" },
-            { name: "Chad", iso: "TD" }, { name: "Chile", iso: "CL" }, { name: "China", iso: "CN" },
-            { name: "Colombia", iso: "CO" }, { name: "Comoros", iso: "KM" }, { name: "Congo, Dem. Rep.", iso: "CD" },
-            { name: "Congo, Rep.", iso: "CG" }, { name: "Costa Rica", iso: "CR" }, { name: "Croatia", iso: "HR" },
-            { name: "Cuba", iso: "CU" }, { name: "Cyprus", iso: "CY" }, { name: "Czechia", iso: "CZ" },
-            { name: "Denmark", iso: "DK" }, { name: "Djibouti", iso: "DJ" }, { name: "Dominica", iso: "DM" },
-            { name: "Dominican Republic", iso: "DO" }, { name: "Ecuador", iso: "EC" }, { name: "Egypt", iso: "EG" },
-            { name: "El Salvador", iso: "SV" }, { name: "Equatorial Guinea", iso: "GQ" }, { name: "Eritrea", iso: "ER" },
-            { name: "Estonia", iso: "EE" }, { name: "Eswatini", iso: "SZ" }, { name: "Ethiopia", iso: "ET" },
-            { name: "Fiji", iso: "FJ" }, { name: "Finland", iso: "FI" }, { name: "France", iso: "FR" },
-            { name: "Gabon", iso: "GA" }, { name: "Gambia", iso: "GM" }, { name: "Georgia", iso: "GE" },
-            { name: "Germany", iso: "DE" }, { name: "Ghana", iso: "GH" }, { name: "Greece", iso: "GR" },
-            { name: "Grenada", iso: "GD" }, { name: "Guatemala", iso: "GT" }, { name: "Guinea", iso: "GN" },
-            { name: "Guinea-Bissau", iso: "GW" }, { name: "Guyana", iso: "GY" }, { name: "Haiti", iso: "HT" },
-            { name: "Honduras", iso: "HN" }, { name: "Hungary", iso: "HU" }, { name: "Iceland", iso: "IS" },
-            { name: "India", iso: "IN" }, { name: "Indonesia", iso: "ID" }, { name: "Iran", iso: "IR" },
-            { name: "Iraq", iso: "IQ" }, { name: "Ireland", iso: "IE" }, { name: "Israel", iso: "IL" },
-            { name: "Italy", iso: "IT" }, { name: "Ivory Coast", iso: "CI" }, { name: "Jamaica", iso: "JM" },
-            { name: "Japan", iso: "JP" }, { name: "Jordan", iso: "JO" }, { name: "Kazakhstan", iso: "KZ" },
-            { name: "Kenya", iso: "KE" }, { name: "Kiribati", iso: "KI" }, { name: "Korea, North", iso: "KP" },
-            { name: "Korea, South", iso: "KR" }, { name: "Kosovo", iso: "XK" }, { name: "Kuwait", iso: "KW" },
-            { name: "Kyrgyzstan", iso: "KG" }, { name: "Laos", iso: "LA" }, { name: "Latvia", iso: "LV" },
-            { name: "Lebanon", iso: "LB" }, { name: "Lesotho", iso: "LS" }, { name: "Liberia", iso: "LR" },
-            { name: "Libya", iso: "LY" }, { name: "Liechtenstein", iso: "LI" }, { name: "Lithuania", iso: "LT" },
-            { name: "Luxembourg", iso: "LU" }, { name: "Madagascar", iso: "MG" }, { name: "Malawi", iso: "MW" },
-            { name: "Malaysia", iso: "MY" }, { name: "Maldives", iso: "MV" }, { name: "Mali", iso: "ML" },
-            { name: "Malta", iso: "MT" }, { name: "Marshall Islands", iso: "MH" }, { name: "Mauritania", iso: "MR" },
-            { name: "Mauritius", iso: "MU" }, { name: "Mexico", iso: "MX" }, { name: "Micronesia", iso: "FM" },
-            { name: "Moldova", iso: "MD" }, { name: "Monaco", iso: "MC" }, { name: "Mongolia", iso: "MN" },
-            { name: "Montenegro", iso: "ME" }, { name: "Morocco", iso: "MA" }, { name: "Mozambique", iso: "MZ" },
-            { name: "Myanmar", iso: "MM" }, { name: "Namibia", iso: "NA" }, { name: "Nauru", iso: "NR" },
-            { name: "Nepal", iso: "NP" }, { name: "Netherlands", iso: "NL" }, { name: "New Zealand", iso: "NZ" },
-            { name: "Nicaragua", iso: "NI" }, { name: "Niger", iso: "NE" }, { name: "Nigeria", iso: "NG" },
-            { name: "North Macedonia", iso: "MK" }, { name: "Norway", iso: "NO" }, { name: "Oman", iso: "OM" },
-            { name: "Pakistan", iso: "PK" }, { name: "Palau", iso: "PW" }, { name: "Palestine", iso: "PS" },
-            { name: "Panama", iso: "PA" }, { name: "Papua New Guinea", iso: "PG" }, { name: "Paraguay", iso: "PY" },
-            { name: "Peru", iso: "PE" }, { name: "Philippines", iso: "PH" }, { name: "Poland", iso: "PL" },
-            { name: "Portugal", iso: "PT" }, { name: "Qatar", iso: "QA" }, { name: "Romania", iso: "RO" },
-            { name: "Russia", iso: "RU" }, { name: "Rwanda", iso: "RW" }, { name: "Saint Kitts and Nevis", iso: "KN" },
-            { name: "Saint Lucia", iso: "LC" }, { name: "Saint Vincent and the Grenadines", iso: "VC" }, { name: "Samoa", iso: "WS" },
-            { name: "San Marino", iso: "SM" }, { name: "Sao Tome and Principe", iso: "ST" }, { name: "Saudi Arabia", iso: "SA" },
-            { name: "Senegal", iso: "SN" }, { name: "Serbia", iso: "RS" }, { name: "Seychelles", iso: "SC" },
-            { name: "Sierra Leone", iso: "SL" }, { name: "Singapore", iso: "SG" }, { name: "Slovakia", iso: "SK" },
-            { name: "Slovenia", iso: "SI" }, { name: "Solomon Islands", iso: "SB" }, { name: "Somalia", iso: "SO" },
-            { name: "South Africa", iso: "ZA" }, { name: "South Sudan", iso: "SS" }, { name: "Spain", iso: "ES" },
-            { name: "Sri Lanka", iso: "LK" }, { name: "Sudan", iso: "SD" }, { name: "Suriname", iso: "SR" },
-            { name: "Sweden", iso: "SE" }, { name: "Switzerland", iso: "CH" }, { name: "Syria", iso: "SY" },
-            { name: "Taiwan", iso: "TW" }, { name: "Tajikistan", iso: "TJ" }, { name: "Tanzania", iso: "TZ" },
-            { name: "Thailand", iso: "TH" }, { name: "Timor-Leste", iso: "TL" }, { name: "Togo", iso: "TG" },
-            { name: "Tonga", iso: "TO" }, { name: "Trinidad and Tobago", iso: "TT" }, { name: "Tunisia", iso: "TN" },
-            { name: "Turkey", iso: "TR" }, { name: "Turkmenistan", iso: "TM" }, { name: "Tuvalu", iso: "TV" },
-            { name: "Uganda", iso: "UG" }, { name: "Ukraine", iso: "UA" }, { name: "United Arab Emirates", iso: "AE" },
-            { name: "United Kingdom", iso: "GB" }, { name: "United States", iso: "US" }, { name: "Uruguay", iso: "UY" },
-            { name: "Uzbekistan", iso: "UZ" }, { name: "Vanuatu", iso: "VU" }, { name: "Vatican City", iso: "VA" },
-            { name: "Venezuela", iso: "VE" }, { name: "Vietnam", iso: "VN" }, { name: "Yemen", iso: "YE" },
-            { name: "Zambia", iso: "ZM" }, { name: "Zimbabwe", iso: "ZW" }
+        let currentCountry = null;
+        let attemptsLeft = 5;
+        let hintLevel = 0; // 0: no hints, 1: continent, 2: capital, etc.
+        let gameActive = false;
+
+        // Comprehensive country data with hint details
+        // Note: For a real game, you'd want a much larger and more diverse set of facts.
+        const allCountryData = [
+            { name: "France", capital: "Paris", continent: "Europe", population: "Large", fact: "Home to the Eiffel Tower" },
+            { name: "Japan", capital: "Tokyo", continent: "Asia", population: "Large", fact: "Known for cherry blossoms and sushi" },
+            { name: "Brazil", capital: "Brasília", continent: "South America", population: "Very Large", fact: "Famous for its Amazon rainforest" },
+            { name: "Egypt", capital: "Cairo", continent: "Africa", population: "Large", fact: "Pyramids of Giza are here" },
+            { name: "Australia", capital: "Canberra", continent: "Oceania", population: "Medium", fact: "Known for kangaroos and the Outback" },
+            { name: "Canada", capital: "Ottawa", continent: "North America", population: "Medium", fact: "Second largest country by land area" },
+            { name: "India", capital: "New Delhi", continent: "Asia", population: "Very Large", fact: "The Taj Mahal is located here" },
+            { name: "Germany", capital: "Berlin", continent: "Europe", population: "Large", fact: "Famous for its beer festivals" },
+            { name: "South Africa", capital: "Pretoria", continent: "Africa", population: "Medium", fact: "Has three capital cities" },
+            { name: "Mexico", capital: "Mexico City", continent: "North America", population: "Large", fact: "Celebrates Day of the Dead" },
+            { name: "Italy", capital: "Rome", continent: "Europe", population: "Large", fact: "Shaped like a boot" },
+            { name: "China", capital: "Beijing", continent: "Asia", population: "Very Large", fact: "Has the Great Wall" },
+            { name: "Argentina", capital: "Buenos Aires", continent: "South America", population: "Medium", fact: "Birthplace of Tango" },
+            { name: "Nigeria", capital: "Abuja", continent: "Africa", population: "Very Large", fact: "Most populous country in Africa" },
+            { name: "New Zealand", capital: "Wellington", continent: "Oceania", population: "Small", fact: "Known for its stunning fjords" },
+            { name: "Spain", capital: "Madrid", continent: "Europe", population: "Large", fact: "Known for flamenco dancing" },
+            { name: "Russia", capital: "Moscow", continent: "Europe/Asia", population: "Very Large", fact: "Largest country by land area" },
+            { name: "Peru", capital: "Lima", continent: "South America", population: "Medium", fact: "Home to Machu Picchu" },
+            { name: "Kenya", capital: "Nairobi", continent: "Africa", population: "Large", fact: "Famous for its wildlife safaris" },
+            { name: "United States", capital: "Washington, D.C.", continent: "North America", population: "Very Large", fact: "Has 50 states" },
+            { name: "Turkey", capital: "Ankara", continent: "Europe/Asia", population: "Large", fact: "Sits on two continents" }
         ];
 
-        // Mappings for common aliases to their official names (lowercase)
-        const countryAliases = {
-            "usa": "United States",
-            "uk": "United Kingdom",
-            "drc": "Congo, Dem. Rep.",
-            "congo dem rep": "Congo, Dem. Rep.",
-            "congo rep": "Congo, Rep.",
-            "ivory coast": "Ivory Coast",
-            "north korea": "Korea, North",
-            "south korea": "Korea, South",
-            "eswatini": "Eswatini",
-            "myanmar": "Myanmar",
-            "palestine": "Palestine",
-            "russia": "Russia",
-            "tanzania": "Tanzania",
-            "turkey": "Turkey",
-            "uae": "United Arab Emirates",
-            "vatican": "Vatican City",
-            "east timor": "Timor-Leste",
-            "saint kitts": "Saint Kitts and Nevis",
-            "saint lucia": "Saint Lucia",
-            "saint vincent": "Saint Vincent and the Grenadines",
-            "macedonia": "North Macedonia",
-            "czech republic": "Czechia",
-            "republic of the congo": "Congo, Rep.",
-            "democratic republic of the congo": "Congo, Dem. Rep.",
-            "timor leste": "Timor-Leste"
-        };
+        // --- Game Functions ---
 
-        // Create lookup maps for efficient access
-        const countryNameToIso = new Map();
-        const allCountryNamesLower = new Set();
+        function selectRandomCountry() {
+            const randomIndex = Math.floor(Math.random() * allCountryData.length);
+            currentCountry = allCountryData[randomIndex];
+            console.log("Debug: Current Country is", currentCountry.name); // For debugging, remove in production
+        }
 
-        function initializeGameData() {
-            countryData.forEach(country => {
-                const lowerName = country.name.toLowerCase();
-                allCountries.push({ name: lowerName, iso: country.iso }); 
-                countryNameToIso.set(lowerName, country.iso); 
-                allCountryNamesLower.add(lowerName);
-            });
+        function getHint(level) {
+            if (!currentCountry) return "Error: No country selected.";
 
-            // Add aliases to the allCountryNamesLower set so they are recognized as valid inputs
-            for (const alias in countryAliases) {
-                allCountryNamesLower.add(alias);
+            switch (level) {
+                case 1: return `Hint 1: It's in ${currentCountry.continent}.`;
+                case 2: return `Hint 2: Its capital city is ${currentCountry.capital}.`;
+                case 3: return `Hint 3: It has a ${currentCountry.population} population.`;
+                case 4: return `Hint 4: ${currentCountry.fact}.`;
+                case 5: return `Hint 5: The country name starts with '${currentCountry.name.charAt(0).toUpperCase()}'.`;
+                default: return "No more hints available.";
             }
-
-            totalCountDisplay.textContent = countryData.length;
         }
 
         function startGame() {
-            if (gameRunning) return;
-
-            gameRunning = true;
-            foundCountries.clear();
-            foundCountDisplay.textContent = 0;
-            countryInput.value = '';
+            gameActive = true;
+            attemptsLeft = 5;
+            hintLevel = 0;
             feedbackMessage.textContent = '';
-            startButton.style.display = 'none';
-            resetButton.style.display = 'inline-block';
-            countryInput.disabled = false;
-            countryInput.focus();
+            guessInput.value = '';
+            guessInput.disabled = false;
+            guessInput.focus();
+            startGameButton.style.display = 'none';
+            newGameButton.style.display = 'inline-block';
 
-            startTime = Date.now();
-            timerInterval = setInterval(updateTimer, 1000);
+            selectRandomCountry();
+            updateGameDisplay();
+            provideHint(); // Give the first hint immediately
         }
 
-        function endGame() {
-            gameRunning = false;
-            clearInterval(timerInterval);
-            countryInput.disabled = true;
-            feedbackMessage.textContent = `Congratulations! You found all ${countryData.length} countries in ${timeDisplay.textContent}!`;
-            feedbackMessage.className = 'feedback correct';
-            resetButton.textContent = 'Play Again';
-
-            // Custom pop-up message!
-            setTimeout(() => { 
-                alert("Good job Chanel, love you lots <3");
-            }, 100);
+        function provideHint() {
+            if (attemptsLeft > 0 && hintLevel <= 5) {
+                hintLevel++; // Increment hint level for the next hint
+                hintDisplay.textContent = getHint(hintLevel);
+            } else if (attemptsLeft === 0) {
+                 hintDisplay.textContent = `You ran out of tries! The country was ${currentCountry.name}.`;
+            } else {
+                hintDisplay.textContent = `No more hints. Good luck!`;
+            }
         }
 
-        function updateTimer() {
-            const elapsedTime = Date.now() - startTime;
-            const minutes = Math.floor(elapsedTime / 60000);
-            const seconds = Math.floor((elapsedTime % 60000) / 1000);
-            timeDisplay.textContent =
-                `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        function updateGameDisplay() {
+            triesLeftDisplay.textContent = attemptsLeft;
         }
 
-        function checkCountry() {
-            const rawInputText = countryInput.value.trim();
-            const lowerCaseInput = rawInputText.toLowerCase();
-            countryInput.value = ''; 
+        function checkGuess() {
+            if (!gameActive) return;
 
-            if (!gameRunning) return;
+            const userGuess = guessInput.value.trim().toLowerCase();
+            guessInput.value = ''; // Clear input
 
-            if (lowerCaseInput === '') {
-                feedbackMessage.textContent = '';
+            if (!userGuess) {
+                feedbackMessage.textContent = "Please enter a guess!";
+                feedbackMessage.className = 'feedback incorrect'; // Use incorrect for empty guess too
                 return;
             }
 
-            let officialCountryNameLower = null;
-
-            // 1. Check if direct match with official country names
-            if (countryNameToIso.has(lowerCaseInput)) {
-                officialCountryNameLower = lowerCaseInput;
-            }
-            // 2. Check if it's an alias
-            else if (countryAliases[lowerCaseInput]) {
-                officialCountryNameLower = countryAliases[lowerCaseInput].toLowerCase();
-            }
-
-            if (officialCountryNameLower) {
-                if (!foundCountries.has(officialCountryNameLower)) {
-                    foundCountries.add(officialCountryNameLower);
-                    feedbackMessage.textContent = `"${officialCountryNameLower.toUpperCase()}" found!`;
-                    feedbackMessage.className = 'feedback correct';
-                    foundCountDisplay.textContent = foundCountries.size;
-
-                    if (foundCountries.size === countryData.length) {
-                        endGame();
-                    }
-                } else {
-                    feedbackMessage.textContent = `"${rawInputText.toUpperCase()}" already found!`;
-                    feedbackMessage.className = 'feedback incorrect';
-                }
+            if (userGuess === currentCountry.name.toLowerCase()) {
+                gameActive = false;
+                feedbackMessage.textContent = `Correct! You guessed "${currentCountry.name}"!`;
+                feedbackMessage.className = 'feedback correct';
+                guessInput.disabled = true;
+                showModal("Good Job Chanel! <3", `You guessed "${currentCountry.name}" correctly!`);
             } else {
-                feedbackMessage.textContent = `"${rawInputText.toUpperCase()}" is not a recognized country.`;
-                feedbackMessage.className = 'feedback incorrect';
+                attemptsLeft--;
+                updateGameDisplay();
+                if (attemptsLeft > 0) {
+                    feedbackMessage.textContent = `Incorrect! You have ${attemptsLeft} tries left.`;
+                    feedbackMessage.className = 'feedback incorrect';
+                    provideHint(); // Provide a new hint after an incorrect guess
+                } else {
+                    gameActive = false;
+                    feedbackMessage.textContent = `Game Over! The country was "${currentCountry.name}".`;
+                    feedbackMessage.className = 'feedback incorrect';
+                    guessInput.disabled = true;
+                    showModal("Game Over!", `The country was "${currentCountry.name}". Better luck next time!`);
+                }
             }
         }
 
         function resetGame() {
-            clearInterval(timerInterval);
-            gameRunning = false;
-            foundCountries.clear();
-            foundCountDisplay.textContent = 0;
-            timeDisplay.textContent = '00:00';
-            countryInput.value = '';
-            feedbackMessage.textContent = '';
-            countryInput.disabled = true;
-            startButton.style.display = 'inline-block';
-            resetButton.style.display = 'none';
-            resetButton.textContent = 'Reset Game';
+            // This function effectively re-initializes for a new game
+            startGame();
+        }
+
+        // --- Modal Functions ---
+        function showModal(title, message) {
+            modalTitle.textContent = title;
+            modalMessage.innerHTML = message; // Use innerHTML for potential <br> or other tags
+            gameModal.classList.add('show');
+        }
+
+        function hideModal() {
+            gameModal.classList.remove('show');
         }
 
         // --- Event Listeners ---
-        startButton.addEventListener('click', startGame);
-        resetButton.addEventListener('click', resetGame);
-        countryInput.addEventListener('keydown', (event) => {
+        startGameButton.addEventListener('click', startGame);
+        newGameButton.addEventListener('click', resetGame);
+        guessInput.addEventListener('keydown', (event) => {
             if (event.key === 'Enter') {
-                checkCountry();
+                checkGuess();
             }
         });
+        modalCloseButton.addEventListener('click', hideModal);
 
-        // Initialize the game when the page loads
-        initializeGameData();
-        resetGame(); // Set initial state
+        // --- Initialize Game on Load ---
+        updateGameDisplay();
     </script>
 </body>
 </html>
+
